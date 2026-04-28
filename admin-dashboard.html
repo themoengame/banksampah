@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Bank Sampah</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .sidebar { background: #0a3622; }
+        .nav-active { background: #1e6b4c; border-left: 4px solid #fbbf24; }
+        .card-hover:hover { transform: translateY(-3px); transition: all 0.2s; }
+        .table-wrapper { overflow-x: auto; }
+        @media (max-width: 768px) { .sidebar { transform: translateX(-100%); position: fixed; z-index: 50; transition: 0.2s; } .sidebar.open { transform: translateX(0); } }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="sidebar w-64 text-white flex-shrink-0 hidden md:block" id="sidebar">
+            <div class="p-5 border-b border-emerald-800">
+                <h2 class="text-2xl font-bold"><i class="fas fa-leaf mr-2"></i>Bank Sampah</h2>
+                <p class="text-sm text-emerald-200">Admin Panel</p>
+            </div>
+            <nav class="mt-6">
+                <a href="#" onclick="showSection('dashboard')" class="nav-item flex items-center gap-3 px-6 py-3 hover:bg-emerald-800"><i class="fas fa-tachometer-alt w-5"></i> Dashboard</a>
+                <a href="#" onclick="showSection('nasabah')" class="nav-item flex items-center gap-3 px-6 py-3 hover:bg-emerald-800"><i class="fas fa-users w-5"></i> Data Nasabah</a>
+                <a href="#" onclick="showSection('petugas')" class="nav-item flex items-center gap-3 px-6 py-3 hover:bg-emerald-800"><i class="fas fa-user-tie w-5"></i> Kelola Petugas</a>
+                <a href="#" onclick="showSection('harga')" class="nav-item flex items-center gap-3 px-6 py-3 hover:bg-emerald-800"><i class="fas fa-tags w-5"></i> Harga Sampah</a>
+                <a href="#" onclick="showSection('transaksi')" class="nav-item flex items-center gap-3 px-6 py-3 hover:bg-emerald-800"><i class="fas fa-exchange-alt w-5"></i> Semua Transaksi</a>
+                <a href="#" onclick="showSection('penukaran')" class="nav-item flex items-center gap-3 px-6 py-3 hover:bg-emerald-800"><i class="fas fa-money-bill-wave w-5"></i> Penukaran Saldo</a>
+                <a href="#" onclick="logout()" class="nav-item flex items-center gap-3 px-6 py-3 mt-10 text-red-300 hover:bg-red-900"><i class="fas fa-sign-out-alt w-5"></i> Logout</a>
+            </nav>
+        </aside>
+
+        <!-- Main -->
+        <main class="flex-1 p-6">
+            <div class="flex justify-between items-center mb-6">
+                <button id="menuBtn" class="md:hidden bg-emerald-700 text-white p-2 rounded"><i class="fas fa-bars"></i></button>
+                <h1 class="text-2xl font-bold text-gray-800" id="pageTitle">Dashboard Admin</h1>
+                <div class="text-sm bg-white rounded-full px-4 py-1 shadow"><i class="fas fa-user-circle"></i> <span id="adminName">Admin</span></div>
+            </div>
+            <div id="contentArea">Memuat data...</div>
+        </main>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let hargaList = [];
+
+        function showSection(section) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('nav-active'));
+            event.target.closest('.nav-item').classList.add('nav-active');
+            if(section === 'dashboard') renderDashboard();
+            if(section === 'nasabah') renderNasabah();
+            if(section === 'petugas') renderPetugas();
+            if(section === 'harga') renderHarga();
+            if(section === 'transaksi') renderTransaksi();
+            if(section === 'penukaran') renderPenukaran();
+            document.getElementById('pageTitle').innerText = document.querySelector('.nav-active').innerText.trim();
+        }
+
+        function loadUserData() {
+            google.script.run.withSuccessHandler(user => { if(user) currentUser = user; document.getElementById('adminName').innerText = user?.nama || 'Admin'; }).getCurrentUser();
+        }
+        function logout() { google.script.run.logout(); window.location.href = '?page=login'; }
+
+        async function renderDashboard() {
+            document.getElementById('contentArea').innerHTML = `<div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8" id="statsCards"></div><div class="bg-white p-5 rounded-2xl shadow"><h3 class="font-bold text-lg mb-2">Ringkasan Cepat</h3><p class="text-gray-500">Statistik harian diperbarui secara realtime.</p></div>`;
+            google.script.run.withSuccessHandler(statsRes => {
+                if(statsRes.success){
+                    let s = statsRes.stats;
+                    document.getElementById('statsCards').innerHTML = `
+                        <div class="bg-white p-5 rounded-2xl shadow card-hover"><i class="fas fa-users text-3xl text-emerald-600"></i><p class="text-2xl font-bold">${s.totalNasabah}</p><p>Total Nasabah</p></div>
+                        <div class="bg-white p-5 rounded-2xl shadow"><i class="fas fa-trash-alt text-3xl text-emerald-600"></i><p class="text-2xl font-bold">${s.transaksiHariIni}</p><p>Transaksi Hari Ini</p></div>
+                        <div class="bg-white p-5 rounded-2xl shadow"><i class="fas fa-weight-hanging text-3xl text-emerald-600"></i><p class="text-2xl font-bold">${s.totalSampahHariIni} kg</p><p>Sampah Masuk</p></div>
+                        <div class="bg-white p-5 rounded-2xl shadow"><i class="fas fa-hand-holding-usd text-3xl text-emerald-600"></i><p class="text-2xl font-bold">Rp${s.pendapatanHariIni.toLocaleString()}</p><p>Pendapatan Hari Ini</p></div>
+                    `;
+                }
+            }).getDashboardStats();
+        }
+
+        function renderNasabah() {
+            document.getElementById('contentArea').innerHTML = `<div class="bg-white rounded-2xl shadow p-4"><div class="flex justify-between mb-4"><h2 class="text-xl font-bold">Data Nasabah</h2><button onclick="showTambahNasabah()" class="bg-emerald-600 text-white px-4 py-2 rounded-lg"><i class="fas fa-plus"></i> Tambah</button></div><div class="table-wrapper"><table class="min-w-full border" id="nasabahTable"><thead><tr class="bg-gray-100"><th>ID</th><th>Nama</th><th>Username</th><th>No HP</th><th>Saldo</th><th>Status</th></tr></thead><tbody><tr><td colspan="6">Memuat...</td></tr></tbody></table></div></div>`;
+            google.script.run.withSuccessHandler(res => {
+                if(res.success){
+                    let rows = '';
+                    res.data.forEach(n => {
+                        rows += `<tr class="border-b"><td class="p-2">${n.id}</td><td>${n.nama}</td><td>${n.username}</td><td>${n.noHp}</td><td class="font-semibold">Rp${(n.saldo||0).toLocaleString()}</td><td>${n.status}</td></tr>`;
+                    });
+                    document.querySelector('#nasabahTable tbody').innerHTML = rows;
+                }
+            }).getDataNasabah();
+        }
+        function showTambahNasabah() {
+            let nama = prompt("Nama lengkap:"); if(!nama) return;
+            let username = prompt("Username:"); if(!username) return;
+            let pass = prompt("Password:"); if(!pass) return;
+            let hp = prompt("No HP:"); let email = prompt("Email:"); let alamat = prompt("Alamat:");
+            google.script.run.withSuccessHandler(res => { alert(res.message); if(res.success) renderNasabah(); }).tambahNasabah({nama, username, password:pass, noHp:hp, email, alamat});
+        }
+
+        function renderPetugas() {
+            document.getElementById('contentArea').innerHTML = `<div class="bg-white rounded-2xl shadow p-4"><div class="flex justify-between"><h2 class="text-xl font-bold">Daftar Petugas</h2><button onclick="tambahPetugasBaru()" class="bg-emerald-600 text-white px-3 py-1 rounded"><i class="fas fa-plus"></i> Tambah Petugas</button></div><div class="table-wrapper mt-3"><table class="min-w-full border" id="petugasTable"><thead><tr><th>Nama</th><th>No HP</th><th>Lokasi</th><th>Username</th><th>Status</th></tr></thead><tbody></tbody></table></div></div>`;
+            google.script.run.withSuccessHandler(res => {
+                if(res.success){
+                    let html = ''; res.data.forEach(p => { html += `<tr><td>${p.nama}</td><td>${p.noHp}</td><td>${p.lokasi}</td><td>${p.username}</td><td>${p.status}</td></tr>`; });
+                    document.querySelector('#petugasTable tbody').innerHTML = html;
+                }
+            }).getDataPetugas();
+        }
+        function tambahPetugasBaru() {
+            let nama = prompt("Nama petugas:"); let hp = prompt("No HP:"); let lokasi = prompt("Lokasi tugas:");
+            let user = prompt("Username:"); let pass = prompt("Password:");
+            google.script.run.withSuccessHandler(res => { alert(res.message); renderPetugas(); }).tambahPetugas({nama, noHp:hp, lokasi, username:user, password:pass, role:'Petugas'});
+        }
+
+        function renderHarga() {
+            document.getElementById('contentArea').innerHTML = `<div class="bg-white p-4 rounded-2xl shadow"><h2 class="text-xl font-bold">Master Harga Sampah</h2><div class="table-wrapper mt-3"><table class="min-w-full border"><thead><tr><th>Jenis</th><th>Satuan</th><th>Harga Beli (Rp)</th><th>Harga Jual</th><th>Aksi</th></tr></thead><tbody id="hargaBody"></tbody></table></div></div>`;
+            google.script.run.withSuccessHandler(data => {
+                hargaList = data;
+                let body = '';
+                data.forEach(h => {
+                    body += `<tr><td>${h.jenis}</td><td>${h.satuan}</td><td><input type="number" id="beli_${h.id}" value="${h.hargaBeli}" class="border rounded w-24 px-1"></td><td><input type="number" id="jual_${h.id}" value="${h.hargaJual}" class="border rounded w-24 px-1"></td><td><button onclick="updateHarga('${h.id}')" class="bg-blue-600 text-white px-2 py-1 rounded text-sm">Update</button></td></tr>`;
+                });
+                document.getElementById('hargaBody').innerHTML = body;
+            }).getHargaSampah();
+        }
+
+        window.updateHarga = (id) => {
+            let beli = document.getElementById(`beli_${id}`).value;
+            let jual = document.getElementById(`jual_${id}`).value;
+            google.script.run.withSuccessHandler(res => { alert(res.message); renderHarga(); }).updateHargaSampah(id, parseInt(beli), parseInt(jual));
+        };
+
+        function renderTransaksi() {
+            document.getElementById('contentArea').innerHTML = `<div class="bg-white p-4 rounded-2xl shadow overflow-x-auto"><h2 class="text-xl font-bold">Semua Transaksi Setor</h2><table class="min-w-full text-sm"><thead><tr><th>Tanggal</th><th>Nasabah</th><th>Jenis</th><th>Berat</th><th>Total</th><th>Petugas</th></tr></thead><tbody id="transAllBody"></tbody></table></div>`;
+            google.script.run.withSuccessHandler(res => {
+                if(res.success){
+                    let rows = '';
+                    res.data.forEach(t => { rows += `<tr><td>${new Date(t.tanggal).toLocaleDateString()}</td><td>${t.namaNasabah}</td><td>${t.jenisSampah}</td><td>${t.berat} kg</td><td>Rp${t.total.toLocaleString()}</td><td>${t.petugas}</td></tr>`; });
+                    document.getElementById('transAllBody').innerHTML = rows;
+                }
+            }).getSemuaTransaksi();
+        }
+
+        function renderPenukaran() {
+            document.getElementById('contentArea').innerHTML = `<div class="bg-white p-4 rounded-2xl shadow"><h2 class="text-xl font-bold">Permintaan Penukaran Saldo</h2><table class="min-w-full border"><thead><tr><th>Tanggal</th><th>Nasabah</th><th>Metode</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="penukaranBody"></tbody></table></div>`;
+            google.script.run.withSuccessHandler(res => {
+                if(res.success){
+                    let rows = '';
+                    res.data.forEach(p => {
+                        rows += `<tr><td>${new Date(p.tanggal).toLocaleDateString()}</td><td>${p.namaNasabah}</td><td>${p.metode}</td><td>Rp${p.nominal.toLocaleString()}</td><td>${p.status}</td><td>${p.status === 'Diproses' ? `<button onclick="updateStatusPenukaran('${p.idTukar}','Selesai')" class="bg-green-600 text-white px-2 py-1 rounded">Selesaikan</button>` : '-'}</td></tr>`;
+                    });
+                    document.getElementById('penukaranBody').innerHTML = rows;
+                }
+            }).getDataPenukaran();
+        }
+        window.updateStatusPenukaran = (id, stat) => {
+            google.script.run.withSuccessHandler(res => { alert(res.message); renderPenukaran(); }).updateStatusPenukaran(id, stat);
+        };
+
+        loadUserData();
+        renderDashboard();
+        document.getElementById('menuBtn')?.addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
+    </script>
+</body>
+</html>
