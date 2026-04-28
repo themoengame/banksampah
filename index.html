@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Bank Sampah - Login</title>
+    <!-- Tailwind CSS + Font Awesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f3b2c 0%, #1e6b4c 100%);
+            min-height: 100vh;
+        }
+        .card-glass {
+            backdrop-filter: blur(2px);
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.2);
+        }
+        .input-focus:focus {
+            box-shadow: 0 0 0 3px rgba(30, 107, 76, 0.3);
+            border-color: #1e6b4c;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <div class="w-full max-w-md card-glass p-8 transition-all">
+        <div class="text-center mb-6">
+            <i class="fas fa-recycle text-5xl text-emerald-700"></i>
+            <h1 class="text-3xl font-bold text-gray-800 mt-2">Bank Sampah</h1>
+            <p class="text-gray-500">Kelola sampah, raih manfaat</p>
+        </div>
+
+        <form id="loginForm" class="space-y-4">
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Pilih Role</label>
+                <select id="role" class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none input-focus">
+                    <option value="nasabah">Nasabah</option>
+                    <option value="petugas">Petugas</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Username</label>
+                <input type="text" id="username" class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none input-focus" placeholder="Masukkan username" required>
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Password</label>
+                <input type="password" id="password" class="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none input-focus" placeholder="••••••" required>
+            </div>
+            <button type="submit" id="btnLogin" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-xl transition duration-200 flex justify-center items-center gap-2">
+                <i class="fas fa-sign-in-alt"></i> Masuk
+            </button>
+        </form>
+        <p id="errorMsg" class="text-red-600 text-sm text-center mt-4 hidden"></p>
+        <div class="text-center text-xs text-gray-400 mt-6 border-t pt-4">
+            Demo: Nasabah (user: nasabah1 / pass: 123) | Petugas (petugas1 / pass: 123) | Admin (admin / admin123)
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const role = document.getElementById('role').value;
+            const btn = document.getElementById('btnLogin');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    btn.disabled = false;
+                    if (result.success) {
+                        // Redirect berdasarkan role yang dikembalikan server
+                        if (result.role === 'admin') window.location.href = '?page=admin';
+                        else if (result.role === 'petugas') window.location.href = '?page=petugas';
+                        else window.location.href = '?page=nasabah';
+                    } else {
+                        document.getElementById('errorMsg').innerText = result.message;
+                        document.getElementById('errorMsg').classList.remove('hidden');
+                        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk';
+                    }
+                })
+                .withFailureHandler(function(err) {
+                    btn.disabled = false;
+                    document.getElementById('errorMsg').innerText = 'Koneksi gagal: ' + err.message;
+                    document.getElementById('errorMsg').classList.remove('hidden');
+                    btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk';
+                })
+                .login({ username, password, role });
+        });
+    </script>
+</body>
+</html>
