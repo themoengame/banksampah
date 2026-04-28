@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petugas - Bank Sampah</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-6xl mx-auto p-4">
+        <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow mb-6">
+            <h1 class="text-2xl font-bold text-emerald-800"><i class="fas fa-truck"></i> Menu Petugas</h1>
+            <div><span id="petugasName" class="font-semibold"></span> <button onclick="logout()" class="ml-4 bg-red-500 text-white px-3 py-1 rounded"><i class="fas fa-sign-out-alt"></i> Keluar</button></div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Form setor sampah -->
+            <div class="bg-white rounded-2xl shadow p-5">
+                <h3 class="text-lg font-bold mb-3"><i class="fas fa-plus-circle text-emerald-600"></i> Transaksi Setor Sampah</h3>
+                <div id="formSetor" class="space-y-3">
+                    <select id="nasabahId" class="w-full border rounded-xl p-2"><option>Pilih Nasabah</option></select>
+                    <select id="jenisSampah" class="w-full border rounded-xl p-2"></select>
+                    <input type="number" id="beratKg" placeholder="Berat (Kg)" class="w-full border rounded-xl p-2">
+                    <div class="text-sm">Harga satuan: Rp <span id="hargaSatuanTampil">0</span>/kg</div>
+                    <div class="font-bold">Total: Rp <span id="totalPreview">0</span></div>
+                    <button id="btnSetor" class="w-full bg-emerald-700 text-white py-2 rounded-xl">Proses Setor</button>
+                </div>
+                <div id="infoMessage" class="text-sm mt-2 hidden"></div>
+            </div>
+            <!-- Riwayat transaksi terbaru -->
+            <div class="bg-white rounded-2xl shadow p-5">
+                <h3 class="text-lg font-bold mb-2">📋 Transaksi Terakhir</h3>
+                <div id="riwayatTransaksi" class="overflow-y-auto max-h-96">Memuat...</div>
+            </div>
+        </div>
+        <div class="mt-6 bg-white rounded-2xl p-4 shadow">
+            <h3 class="font-bold">📇 Data Nasabah</h3>
+            <div class="overflow-x-auto"><table class="min-w-full text-sm" id="nasabahTablePetugas"><thead><tr><th>Nama</th><th>No HP</th><th>Saldo</th></tr></thead><tbody></tbody></table></div>
+        </div>
+    </div>
+    <script>
+        let listHarga = [], listNasabah = [];
+        function loadData() {
+            google.script.run.withSuccessHandler(res => { if(res.success) { listNasabah = res.data; let opts = '<option value="">-- Pilih Nasabah --</option>'; res.data.forEach(n => opts += `<option value="${n.id}">${n.nama} (${n.username})</option>`); document.getElementById('nasabahId').innerHTML = opts; fillNasabahTable(res.data); } }).getDataNasabah();
+            google.script.run.withSuccessHandler(harga => { listHarga = harga; let opts = ''; harga.forEach(h => opts += `<option value='${JSON.stringify(h)}' data-harga="${h.hargaBeli}">${h.jenis} - Rp${h.hargaBeli}/kg</option>`); document.getElementById('jenisSampah').innerHTML = opts; updateHargaPreview(); }).getHargaSampah();
+            loadRiwayat();
+        }
+        function fillNasabahTable(data) { let html = ''; data.forEach(n => html += `<tr><td>${n.nama}</td><td>${n.noHp}</td><td class="font-semibold">Rp${(n.saldo||0).toLocaleString()}</td></tr>`); document.querySelector('#nasabahTablePetugas tbody').innerHTML = html; }
+        function updateHargaPreview() { let selected = document.getElementById('jenisSampah').value; if(selected){ let obj = JSON.parse(selected); document.getElementById('hargaSatuanTampil').innerText = obj.hargaBeli; hitungTotal(); } }
+        function hitungTotal() { let berat = parseFloat(document.getElementById('beratKg').value)||0; let harga = parseInt(document.getElementById('hargaSatuanTampil').innerText)||0; let total = berat*harga; document.getElementById('totalPreview').innerText = total.toLocaleString(); }
+        document.getElementById('jenisSampah').addEventListener('change', updateHargaPreview);
+        document.getElementById('beratKg').addEventListener('input', hitungTotal);
+
+        document.getElementById('btnSetor').addEventListener('click', function(){
+            let nasabahId = document.getElementById('nasabahId').value;
+            let jenisJson = document.getElementById('jenisSampah').value;
+            if(!nasabahId || !jenisJson){ alert('Pilih nasabah dan jenis sampah'); return; }
+            let jenis = JSON.parse(jenisJson);
+            let berat = parseFloat(document.getElementById('beratKg').value);
+            if(berat<=0){ alert('Masukkan berat >0'); return; }
+            let dataSetor = {
+                idNasabah: nasabahId,
+                namaNasabah: listNasabah.find(n=>n.id===nasabahId)?.nama || '',
+                jenisSampah: jenis.jenis,
+                berat: berat,
+                hargaSatuan: jenis.hargaBeli,
+                lokasi: 'Lokasi Petugas'
+            };
+            google.script.run.withSuccessHandler(res => { alert(res.message); if(res.success) { document.getElementById('beratKg').value=''; loadRiwayat(); loadData(); } }).tambahTransaksiSetor(dataSetor);
+        });
+
+        function loadRiwayat() {
+            google.script.run.withSuccessHandler(res => {
+                if(res.success && res.data){
+                    let html = '<ul class="divide-y">';
+                    res.data.slice(0,10).forEach(t => { html += `<li class="py-2"><b>${t.jenisSampah}</b> ${t.berat}kg → Rp${t.total.toLocaleString()} <span class="text-xs text-gray-500">${new Date(t.tanggal).toLocaleString()}</span></li>`; });
+                    html += '</ul>';
+                    document.getElementById('riwayatTransaksi').innerHTML = html || 'Belum ada transaksi';
+                } else document.getElementById('riwayatTransaksi').innerHTML = 'Gagal memuat riwayat';
+            }).getSemuaTransaksi();
+        }
+
+        function logout() { google.script.run.logout(); window.location.href = '?page=login'; }
+        google.script.run.withSuccessHandler(user => { if(user) document.getElementById('petugasName').innerText = user.nama; }).getCurrentUser();
+        loadData();
+    </script>
+</body>
+</html>
