@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bank Sampah Online</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -18,10 +18,9 @@
     <script>
         // ========== KONFIGURASI ==========
         // GANTI DENGAN URL WEB APP ANDA (hasil deploy doPost)
-        const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbwShRkYOP7qPLYdLYUafx17B3TRMx0jnDe3Oe3XrTZtgCeaP6fetMXsYCarPrpWzl3BZg/exec'; // <-- GANTI INI
+        const API_BASE_URL = 'https://script.google.com/macros/s/AKfycbwShRkYOP7qPLYdLYUafx17B3TRMx0jnDe3Oe3XrTZtgCeaP6fetMXsYCarPrpWzl3BZg/exec';
         
         let currentUser = null;
-        let token = localStorage.getItem('token'); // sederhana, simpan session
         
         // ========== FUNGSI PANGGIL API ==========
         async function callApi(action, data = {}) {
@@ -32,10 +31,11 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action, data })
                 });
+                if (!response.ok) throw new Error('HTTP ' + response.status);
                 return await response.json();
             } catch (err) {
                 console.error(err);
-                return { success: false, message: 'Gagal terhubung ke server' };
+                return { success: false, message: 'Gagal terhubung ke server: ' + err.message };
             }
         }
         
@@ -49,7 +49,6 @@
             const app = document.getElementById('app');
             if (!app) return;
             
-            // Cek login
             const session = JSON.parse(localStorage.getItem('session') || 'null');
             if (page !== 'login' && !session) {
                 page = 'login';
@@ -91,11 +90,11 @@
                             </div>
                             <div>
                                 <label class="block text-gray-700 font-medium">Username</label>
-                                <input type="text" id="username" class="w-full border rounded-xl px-4 py-3" placeholder="Username" required>
+                                <input type="text" id="username" class="w-full border rounded-xl px-4 py-3" placeholder="Username" autocomplete="username" required>
                             </div>
                             <div>
                                 <label class="block text-gray-700 font-medium">Password</label>
-                                <input type="password" id="password" class="w-full border rounded-xl px-4 py-3" placeholder="Password" required>
+                                <input type="password" id="password" class="w-full border rounded-xl px-4 py-3" placeholder="Password" autocomplete="current-password" required>
                             </div>
                             <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-3 rounded-xl transition">
                                 <i class="fas fa-sign-in-alt"></i> Masuk
@@ -265,7 +264,7 @@
                     </div>
                 </div>
             `;
-            // Load data nasabah dan harga
+            // Load data nasabah
             const nasabahRes = await callApi('getDataNasabah');
             if (nasabahRes.success) {
                 let opts = '<option value="">Pilih Nasabah</option>';
@@ -276,6 +275,7 @@
                 listHtml += '</ul>';
                 document.getElementById('listNasabahPetugas').innerHTML = listHtml;
             }
+            // Load harga
             const hargaRes = await callApi('getHargaSampah');
             if (hargaRes.success) {
                 let opts = '';
@@ -303,7 +303,7 @@
                 if (!idNasabah || !jenisJson || !berat) { alert('Lengkapi data'); return; }
                 const jenis = JSON.parse(jenisJson);
                 const resSetor = await callApi('tambahTransaksiSetor', {
-                    idNasabah, namaNasabah: '...', jenisSampah: jenis.jenis, berat, hargaSatuan: jenis.hargaBeli, lokasi: 'Petugas'
+                    idNasabah, namaNasabah: '', jenisSampah: jenis.jenis, berat, hargaSatuan: jenis.hargaBeli, lokasi: 'Petugas'
                 });
                 alert(resSetor.message);
                 if (resSetor.success) {
@@ -392,9 +392,7 @@
                 const keterangan = document.getElementById('keteranganTukar').value;
                 const res = await callApi('ajukanPenukaran', { metode, nominal, keterangan });
                 alert(res.message);
-                if (res.success) {
-                    location.reload();
-                }
+                if (res.success) location.reload();
             });
         }
         
