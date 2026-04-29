@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nasabah - Bank Sampah</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      padding-bottom: 70px;
+    }
+    .header {
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: white;
+      padding: 20px;
+    }
+    .saldo-card {
+      background: rgba(255,255,255,0.2);
+      border-radius: 16px;
+      padding: 15px;
+      margin-top: 15px;
+      text-align: center;
+    }
+    .saldo-amount { font-size: 32px; font-weight: bold; }
+    .btn-logout {
+      float: right;
+      background: #c62828;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .nav {
+      display: flex;
+      justify-content: space-around;
+      background: white;
+      padding: 10px;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      padding: 8px 16px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 20px;
+    }
+    .nav-btn.active {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    .container { padding: 20px; max-width: 600px; margin: 0 auto; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .btn-primary {
+      width: 100%;
+      background: #4caf50;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+    .hidden { display: none; }
+    .info-box {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 480px) {
+      .container { padding: 15px; }
+      .nav-btn { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+      <h2>♻️ Bank Sampah</h2>
+      <p>Halo, <span id="nasabahNama">Loading...</span></p>
+    </div>
+    <div class="saldo-card">
+      <div>💰 Saldo Anda</div>
+      <div class="saldo-amount" id="saldoAmount">Rp 0</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Home -->
+    <div id="menu-home">
+      <div class="info-box">
+        <p><strong>ID Nasabah: <span id="userId"></span></strong></p>
+        <p>Datang ke bank sampah terdekat, tunjukkan ID di atas kepada petugas.</p>
+      </div>
+      <div class="card">
+        <h3>📊 Harga Sampah</h3>
+        <div id="hargaList">Loading...</div>
+      </div>
+      <div class="card">
+        <h3>📋 Transaksi Terbaru</h3>
+        <div id="recentTransaksi">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Tukar Saldo -->
+    <div id="menu-tukar" class="hidden">
+      <div class="card">
+        <h3>💱 Tukar Saldo</h3>
+        <div id="alertMsg"></div>
+        <div class="form-group"><label>Metode</label><select id="metode"><option value="">Pilih</option><option>Transfer Bank</option><option>GoPay</option><option>OVO</option><option>DANA</option></select></div>
+        <div class="form-group"><label>Nominal (Rp)</label><input type="number" id="nominal" min="10000" step="1000"></div>
+        <div class="form-group"><label>No. Rekening / E-Wallet</label><input type="text" id="detail" placeholder="Nomor tujuan"></div>
+        <button class="btn-primary" onclick="ajukanTukar()">Ajukan Penukaran</button>
+      </div>
+      <div class="card">
+        <h3>📋 Riwayat Penukaran</h3>
+        <div id="riwayatTukar">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Riwayat -->
+    <div id="menu-riwayat" class="hidden">
+      <div class="card">
+        <h3>📋 Riwayat Setoran</h3>
+        <div id="riwayatSetor">Loading...</div>
+      </div>
+      <div class="card">
+        <h3>📋 Mutasi Saldo</h3>
+        <div id="riwayatSaldo">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Profil -->
+    <div id="menu-profil" class="hidden">
+      <div class="card">
+        <h3>👤 Profil Saya</h3>
+        <div id="profilData">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="showMenu('home')">🏠 Beranda</button>
+    <button class="nav-btn" onclick="showMenu('tukar')">💱 Tukar</button>
+    <button class="nav-btn" onclick="showMenu('riwayat')">📋 Riwayat</button>
+    <button class="nav-btn" onclick="showMenu('profil')">👤 Profil</button>
+  </div>
+
+  <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxBigs_t1qhRIzx7P1blyDyy8MpP3GiJGpPgzsdZGiTdWh3diAYeVtYpACT6lUwRBrK/exec';
+    let currentUser = null;
+
+    async function checkSession() {
+      const session = localStorage.getItem('bankSampahSession');
+      if (!session) { window.location.href = 'login.html'; return; }
+      currentUser = JSON.parse(session);
+      if (currentUser.role !== 'nasabah') {
+        window.location.href = `${currentUser.role}.html`;
+        return;
+      }
+      document.getElementById('nasabahNama').innerText = currentUser.nama;
+      document.getElementById('userId').innerText = currentUser.userId;
+      await loadSaldo();
+      await loadHarga();
+      await loadRecentTransaksi();
+      await loadProfil();
+      await loadRiwayatTukar();
+    }
+
+    async function fetchAPI(action, data = {}) {
+      const response = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ action, ...data, session: JSON.stringify(currentUser) })
+      });
+      return await response.json();
+    }
+
+    function showMenu(menu) {
+      document.getElementById('menu-home').classList.add('hidden');
+      document.getElementById('menu-tukar').classList.add('hidden');
+      document.getElementById('menu-riwayat').classList.add('hidden');
+      document.getElementById('menu-profil').classList.add('hidden');
+      document.getElementById(`menu-${menu}`).classList.remove('hidden');
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      if (menu === 'tukar') loadRiwayatTukar();
+      if (menu === 'riwayat') { loadRiwayatSetor(); loadMutasiSaldo(); }
+    }
+
+    async function loadSaldo() {
+      const res = await fetchAPI('getSaldo');
+      if (res.saldo !== undefined) {
+        document.getElementById('saldoAmount').innerHTML = `Rp ${parseFloat(res.saldo).toLocaleString()}`;
+      }
+    }
+
+    async function loadHarga() {
+      const res = await fetchAPI('getHarga');
+      if (res.data) {
+        let html = '表-><th>Jenis Sampah</th><th>Harga/Kg</th></tr>';
+        res.data.forEach(h => {
+          html += `<tr><td>${h.jenis}</td><td>Rp ${parseFloat(h.hargaBeli).toLocaleString()}</td></tr>`;
+        });
+        html += '赶到';
+        document.getElementById('hargaList').innerHTML = html;
+      }
+    }
+
+    async function loadRecentTransaksi() {
+      const res = await fetchAPI('getTransaksiNasabah');
+      if (res.data && res.data.length) {
+        let html = '表-><th>Tanggal</th><th>Jenis</th><th>Berat</th><th>Total</th></tr>';
+        res.data.slice(0,5).forEach(t => {
+          html += `<tr><td>${new Date(t.tanggal).toLocaleDateString()}</td><td>${t.jenisSampah}</td><td>${t.berat} kg</td><td>+Rp ${parseFloat(t.total).toLocaleString()}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('recentTransaksi').innerHTML = html;
+      } else {
+        document.getElementById('recentTransaksi').innerHTML = '<p>Belum ada transaksi</p>';
+      }
+    }
+
+    async function loadRiwayatSetor() {
+      const res = await fetchAPI('getTransaksiNasabah');
+      if (res.data && res.data.length) {
+        let html = '表-><th>Tanggal</th><th>Jenis</th><th>Berat</th><th>Total</th></tr>';
+        res.data.forEach(t => {
+          html += `<tr><td>${new Date(t.tanggal).toLocaleDateString()}</td><td>${t.jenisSampah}</td><td>${t.berat} kg</td><td>+Rp ${parseFloat(t.total).toLocaleString()}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('riwayatSetor').innerHTML = html;
+      } else {
+        document.getElementById('riwayatSetor').innerHTML = '<p>Belum ada transaksi</p>';
+      }
+    }
+
+    async function loadMutasiSaldo() {
+      const res = await fetchAPI('getRiwayatSaldo');
+      if (res.data && res.data.length) {
+        let html = '表-><th>Tanggal</th><th>Keterangan</th><th>Jumlah</th></tr>';
+        res.data.forEach(r => {
+          const sign = r.tipe === 'Kredit' ? '+' : '-';
+          const color = r.tipe === 'Kredit' ? 'green' : 'red';
+          html += `<tr><td>${new Date(r.tanggal).toLocaleDateString()}</td><td>${r.keterangan}</td><td style="color:${color}">${sign} Rp ${parseFloat(r.jumlah).toLocaleString()}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('riwayatSaldo').innerHTML = html;
+      } else {
+        document.getElementById('riwayatSaldo').innerHTML = '<p>Belum ada mutasi saldo</p>';
+      }
+    }
+
+    async function loadRiwayatTukar() {
+      const res = await fetchAPI('getPenukaranNasabah');
+      if (res.data && res.data.length) {
+        let html = '表-><th>Tanggal</th><th>Metode</th><th>Nominal</th><th>Status</th></tr>';
+        res.data.forEach(p => {
+          html += `<tr><td>${new Date(p.tanggal).toLocaleDateString()}</td><td>${p.metode}</td><td>-Rp ${parseFloat(p.nominal).toLocaleString()}</td><td>${p.status}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('riwayatTukar').innerHTML = html;
+      } else {
+        document.getElementById('riwayatTukar').innerHTML = '<p>Belum ada riwayat penukaran</p>';
+      }
+    }
+
+    async function loadProfil() {
+      const res = await fetchAPI('getProfil');
+      if (res.data) {
+        document.getElementById('profilData').innerHTML = `
+          <p><strong>ID Nasabah:</strong> ${res.data.id}</p>
+          <p><strong>Nama:</strong> ${res.data.nama}</p>
+          <p><strong>Username:</strong> ${res.data.username}</p>
+          <p><strong>No HP:</strong> ${res.data.noHp}</p>
+          <p><strong>Email:</strong> ${res.data.email || '-'}</p>
+          <p><strong>Alamat:</strong> ${res.data.alamat}</p>
+          <p><strong>Status:</strong> ${res.data.status}</p>
+        `;
+      }
+    }
+
+    async function ajukanTukar() {
+      const metode = document.getElementById('metode').value;
+      const nominal = parseFloat(document.getElementById('nominal').value);
+      const detail = document.getElementById('detail').value;
+      
+      if (!metode) { showAlert('Pilih metode!', 'error'); return; }
+      if (!nominal || nominal < 10000) { showAlert('Minimal Rp10.000!', 'error'); return; }
+      if (!detail) { showAlert('Isi nomor tujuan!', 'error'); return; }
+      
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerText = 'Memproses...';
+      
+      const res = await fetchAPI('ajukanPenukaran', { metode, nominal, keterangan: detail });
+      
+      btn.disabled = false;
+      btn.innerText = 'Ajukan Penukaran';
+      
+      if (res.success) {
+        showAlert(res.message, 'success');
+        document.getElementById('metode').value = '';
+        document.getElementById('nominal').value = '';
+        document.getElementById('detail').value = '';
+        await loadSaldo();
+        await loadRiwayatTukar();
+        await loadMutasiSaldo();
+      } else {
+        showAlert(res.message, 'error');
+      }
+    }
+
+    function showAlert(msg, type) {
+      const div = document.getElementById('alertMsg');
+      div.innerHTML = `<div style="color:${type === 'success' ? 'green' : 'red'}">${type === 'success' ? '✅' : '❌'} ${msg}</div>`;
+      setTimeout(() => div.innerHTML = '', 3000);
+    }
+
+    function logout() {
+      localStorage.removeItem('bankSampahSession');
+      window.location.href = 'login.html';
+    }
+
+    checkSession();
+  </script>
+</body>
+</html>
