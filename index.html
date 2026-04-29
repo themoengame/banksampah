@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank Sampah</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .header {
+      background: #2e7d32;
+      color: white;
+      padding: 12px 20px;
+      text-align: center;
+      font-size: 14px;
+    }
+    iframe {
+      width: 100%;
+      height: calc(100% - 50px);
+      border: none;
+    }
+    .loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    ♻️ Bank Sampah - Sistem Informasi Digital
+  </div>
+  <iframe 
+    src="https://script.google.com/macros/s/AKfycbwShRkYOP7qPLYdLYUafx17B3TRMx0jnDe3Oe3XrTZtgCeaP6fetMXsYCarPrpWzl3BZg/exec" 
+    title="Bank Sampah"
+    sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-same-origin allow-top-navigation"
+  >
+  </iframe>
+  <div class="loading" id="loading">⏳ Memuat Aplikasi...</div>
+  <script>
+    setTimeout(() => {
+      document.getElementById('loading').style.display = 'none';
+    }, 2000);
+  </script>
+</body>
+</html>
