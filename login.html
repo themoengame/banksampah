@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Bank Sampah</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a5f2a 0%, #2d8a3e 50%, #4caf50 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .login-container {
+      max-width: 440px;
+      width: 100%;
+      animation: fadeInUp 0.5s ease;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .login-card {
+      background: white;
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #4caf50, #ff9800);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      margin: 0 auto 15px;
+      box-shadow: 0 8px 20px rgba(46,125,50,0.3);
+    }
+
+    .logo h1 {
+      color: #2e7d32;
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+
+    .logo p {
+      color: #666;
+      font-size: 13px;
+    }
+
+    .alert {
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .alert.show {
+      display: block;
+    }
+
+    .alert-error {
+      background: #ffebee;
+      color: #c62828;
+      border-left: 4px solid #c62828;
+    }
+
+    .alert-success {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border-left: 4px solid #2e7d32;
+    }
+
+    .role-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+      background: #f5f5f5;
+      padding: 5px;
+      border-radius: 50px;
+    }
+
+    .role-btn {
+      flex: 1;
+      text-align: center;
+      padding: 12px 5px;
+      border: none;
+      background: transparent;
+      border-radius: 40px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: #666;
+      transition: all 0.3s;
+    }
+
+    .role-btn.active {
+      background: #4caf50;
+      color: white;
+      box-shadow: 0 2px 8px rgba(76,175,80,0.3);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+      font-size: 13px;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      color: #999;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 14px 15px 14px 48px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      font-size: 15px;
+      transition: all 0.3s;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #4caf50;
+      box-shadow: 0 0 0 3px rgba(76,175,80,0.1);
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 18px;
+      color: #999;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 10px;
+    }
+
+    .btn-login:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(46,125,50,0.4);
+    }
+
+    .btn-login:disabled {
+      opacity: 0.6;
+      transform: none;
+      cursor: not-allowed;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      color: rgba(255,255,255,0.8);
+      font-size: 11px;
+    }
+
+    @media (max-width: 480px) {
+      .login-card {
+        padding: 30px 20px;
+      }
+      .role-btn {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="logo">
+        <div class="logo-icon">♻️</div>
+        <h1>Bank Sampah</h1>
+        <p>Sistem Pengelolaan Sampah Digital</p>
+      </div>
+
+      <div id="alertBox" class="alert"></div>
+
+      <div class="role-selector">
+        <button class="role-btn active" data-role="nasabah" onclick="setRole('nasabah')">👤 Nasabah</button>
+        <button class="role-btn" data-role="petugas" onclick="setRole('petugas')">👷 Petugas</button>
+        <button class="role-btn" data-role="admin" onclick="setRole('admin')">⚙️ Admin</button>
+      </div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Username</label>
+          <div class="input-wrapper">
+            <span class="input-icon">👤</span>
+            <input type="text" id="username" placeholder="Masukkan username" required autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <div class="input-wrapper">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="password" placeholder="Masukkan password" required>
+            <button type="button" class="password-toggle" onclick="togglePassword()">👁️</button>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-login" id="loginBtn">
+          <span id="btnText">Masuk ke Sistem</span>
+        </button>
+      </form>
+    </div>
+    <div class="footer">
+      <p>© 2024 Bank Sampah Digital | Sistem Informasi Bank Sampah</p>
+    </div>
+  </div>
+
+  <script>
+    // Konfigurasi Web App
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxBigs_t1qhRIzx7P1blyDyy8MpP3GiJGpPgzsdZGiTdWh3diAYeVtYpACT6lUwRBrK/exec';
+    
+    let selectedRole = 'nasabah';
+
+    function setRole(role) {
+      selectedRole = role;
+      document.querySelectorAll('.role-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.role === role) btn.classList.add('active');
+      });
+      hideAlert();
+    }
+
+    function togglePassword() {
+      const pwd = document.getElementById('password');
+      const btn = document.querySelector('.password-toggle');
+      if (pwd.type === 'password') {
+        pwd.type = 'text';
+        btn.textContent = '🙈';
+      } else {
+        pwd.type = 'password';
+        btn.textContent = '👁️';
+      }
+    }
+
+    function showAlert(message, type) {
+      const alertBox = document.getElementById('alertBox');
+      alertBox.textContent = message;
+      alertBox.className = `alert alert-${type} show`;
+      setTimeout(() => {
+        alertBox.classList.remove('show');
+      }, 4000);
+    }
+
+    function hideAlert() {
+      const alertBox = document.getElementById('alertBox');
+      alertBox.classList.remove('show');
+    }
+
+    async function handleLogin(event) {
+      event.preventDefault();
+      
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      
+      if (!username) {
+        showAlert('Username tidak boleh kosong!', 'error');
+        document.getElementById('username').focus();
+        return;
+      }
+      if (!password) {
+        showAlert('Password tidak boleh kosong!', 'error');
+        document.getElementById('password').focus();
+        return;
+      }
+      
+      const loginBtn = document.getElementById('loginBtn');
+      const btnText = document.getElementById('btnText');
+      loginBtn.disabled = true;
+      btnText.innerHTML = '<span class="spinner"></span> Memproses...';
+      
+      try {
+        // Kirim request ke Web App
+        const response = await fetch(WEB_APP_URL, {
+          method: 'POST',
+          mode: 'cors',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            username: username,
+            password: password,
+            role: selectedRole
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showAlert('Login berhasil! Mengalihkan...', 'success');
+          // Simpan session di localStorage
+          localStorage.setItem('bankSampahSession', JSON.stringify({
+            userId: result.userId,
+            nama: result.nama,
+            role: result.role,
+            loginTime: new Date().toISOString()
+          }));
+          // Redirect ke dashboard sesuai role
+          setTimeout(() => {
+            window.location.href = `${result.role}.html`;
+          }, 1000);
+        } else {
+          showAlert(result.message || 'Login gagal!', 'error');
+          loginBtn.disabled = false;
+          btnText.innerHTML = 'Masuk ke Sistem';
+          document.getElementById('password').value = '';
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        showAlert('Gagal terhubung ke server. Coba lagi.', 'error');
+        loginBtn.disabled = false;
+        btnText.innerHTML = 'Masuk ke Sistem';
+      }
+    }
+
+    document.getElementById('password').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+      }
+    });
+
+    document.getElementById('username').focus();
+  </script>
+</body>
+</html>
