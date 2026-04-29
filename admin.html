@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Bank Sampah</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+    .header {
+      background: #2e7d32;
+      color: white;
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .header h2 { font-size: 20px; }
+    .user-info { display: flex; align-items: center; gap: 15px; }
+    .btn-logout {
+      background: #c62828;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .nav {
+      background: white;
+      padding: 12px 25px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #ddd;
+    }
+    .nav-btn {
+      background: #eee;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .nav-btn.active {
+      background: #2e7d32;
+      color: white;
+    }
+    .container { padding: 25px; max-width: 1400px; margin: 0 auto; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .stat-value { font-size: 32px; font-weight: bold; color: #2e7d32; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .btn-primary {
+      background: #2e7d32;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow-x: auto;
+      display: block;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th { background: #f5f5f5; font-weight: 600; }
+    .badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+    .badge-success { background: #e8f5e9; color: #2e7d32; }
+    .badge-warning { background: #fff3e0; color: #ef6c00; }
+    .hidden { display: none; }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 90%;
+    }
+    .modal-content input, .modal-content textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+    @media (max-width: 768px) {
+      .container { padding: 15px; }
+      th, td { padding: 8px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>♻️ Bank Sampah - Admin Panel</h2>
+    <div class="user-info">
+      <span id="adminName">Loading...</span>
+      <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="showSection('dashboard')">Dashboard</button>
+    <button class="nav-btn" onclick="showSection('nasabah')">Data Nasabah</button>
+    <button class="nav-btn" onclick="showSection('petugas')">Data Petugas</button>
+    <button class="nav-btn" onclick="showSection('transaksi')">Transaksi</button>
+    <button class="nav-btn" onclick="showSection('penukaran')">Penukaran</button>
+    <button class="nav-btn" onclick="showSection('harga')">Harga Sampah</button>
+  </div>
+
+  <div class="container">
+    <!-- Dashboard -->
+    <div id="section-dashboard">
+      <div class="stats-grid" id="stats"></div>
+      <div class="card">
+        <h3>Transaksi Terbaru</h3>
+        <div id="recentTransaksi">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Nasabah -->
+    <div id="section-nasabah" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <h3>Data Nasabah</h3>
+          <button class="btn-primary" onclick="openModal('nasabah')">+ Tambah Nasabah</button>
+        </div>
+        <div id="tableNasabah">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Petugas -->
+    <div id="section-petugas" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <h3>Data Petugas</h3>
+          <button class="btn-primary" onclick="openModal('petugas')">+ Tambah Petugas</button>
+        </div>
+        <div id="tablePetugas">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Transaksi -->
+    <div id="section-transaksi" class="hidden">
+      <div class="card">
+        <h3>Semua Transaksi</h3>
+        <div id="tableTransaksi">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Penukaran -->
+    <div id="section-penukaran" class="hidden">
+      <div class="card">
+        <h3>Penukaran Saldo</h3>
+        <div id="tablePenukaran">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Harga -->
+    <div id="section-harga" class="hidden">
+      <div class="card">
+        <h3>Harga Sampah</h3>
+        <div id="tableHarga">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nasabah -->
+  <div id="modalNasabah" class="modal">
+    <div class="modal-content">
+      <h3>Tambah Nasabah</h3>
+      <input type="text" id="nUsername" placeholder="Username *">
+      <input type="text" id="nNama" placeholder="Nama Lengkap *">
+      <input type="text" id="nNoHp" placeholder="No HP *">
+      <input type="email" id="nEmail" placeholder="Email">
+      <textarea id="nAlamat" rows="3" placeholder="Alamat *"></textarea>
+      <input type="password" id="nPassword" placeholder="Password *">
+      <div class="modal-buttons">
+        <button class="btn-primary" onclick="simpanNasabah()">Simpan</button>
+        <button onclick="closeModal('nasabah')">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Petugas -->
+  <div id="modalPetugas" class="modal">
+    <div class="modal-content">
+      <h3>Tambah Petugas</h3>
+      <input type="text" id="pNama" placeholder="Nama Lengkap *">
+      <input type="text" id="pNoHp" placeholder="No HP *">
+      <input type="text" id="pLokasi" placeholder="Lokasi Tugas *">
+      <input type="text" id="pUsername" placeholder="Username *">
+      <input type="password" id="pPassword" placeholder="Password *">
+      <div class="modal-buttons">
+        <button class="btn-primary" onclick="simpanPetugas()">Simpan</button>
+        <button onclick="closeModal('petugas')">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxBigs_t1qhRIzx7P1blyDyy8MpP3GiJGpPgzsdZGiTdWh3diAYeVtYpACT6lUwRBrK/exec';
+    let currentUser = null;
+    let currentSection = 'dashboard';
+
+    // Cek session
+    async function checkSession() {
+      const session = localStorage.getItem('bankSampahSession');
+      if (!session) {
+        window.location.href = 'login.html';
+        return;
+      }
+      currentUser = JSON.parse(session);
+      if (currentUser.role !== 'admin') {
+        window.location.href = `${currentUser.role}.html`;
+        return;
+      }
+      document.getElementById('adminName').innerText = currentUser.nama;
+    }
+
+    function showSection(section) {
+      currentSection = section;
+      document.querySelectorAll('.section-dashboard, #section-nasabah, #section-petugas, #section-transaksi, #section-penukaran, #section-harga').forEach(s => {
+        s.classList.add('hidden');
+      });
+      document.getElementById(`section-${section}`).classList.remove('hidden');
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      if (section === 'dashboard') loadDashboard();
+      if (section === 'nasabah') loadNasabah();
+      if (section === 'petugas') loadPetugas();
+      if (section === 'transaksi') loadTransaksi();
+      if (section === 'penukaran') loadPenukaran();
+      if (section === 'harga') loadHarga();
+    }
+
+    async function fetchAPI(action, data = {}) {
+      const response = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ action, ...data, session: JSON.stringify(currentUser) })
+      });
+      return await response.json();
+    }
+
+    async function loadDashboard() {
+      const stats = await fetchAPI('getStats');
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-card"><div class="stat-value">${stats.totalNasabah || 0}</div><div>Total Nasabah</div></div>
+        <div class="stat-card"><div class="stat-value">${stats.transaksiHariIni || 0}</div><div>Transaksi Hari Ini</div></div>
+        <div class="stat-card"><div class="stat-value">${stats.totalSampah || 0} kg</div><div>Sampah Terkumpul</div></div>
+        <div class="stat-card"><div class="stat-value">Rp ${(stats.totalSaldo || 0).toLocaleString()}</div><div>Total Saldo</div></div>
+      `;
+      
+      const transaksi = await fetchAPI('getTransaksi');
+      if (transaksi.data) {
+        let html = '<table><tr><th>ID</th><th>Tanggal</th><th>Nasabah</th><th>Jenis</th><th>Berat</th><th>Total</th></tr>';
+        transaksi.data.slice(0,5).forEach(t => {
+          html += `<tr><td>${t.idTransaksi}</td><td>${new Date(t.tanggal).toLocaleDateString()}</td><td>${t.namaNasabah}</td><td>${t.jenisSampah}</td><td>${t.berat} kg</td><td>Rp ${parseFloat(t.total).toLocaleString()}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('recentTransaksi').innerHTML = html;
+      }
+    }
+
+    async function loadNasabah() {
+      const res = await fetchAPI('getNasabah');
+      if (res.data) {
+        let html = '<table><tr><th>ID</th><th>Nama</th><th>Username</th><th>No HP</th><th>Saldo</th><th>Status</th></tr>';
+        res.data.forEach(n => {
+          html += `<tr><td>${n.id}</td><td>${n.nama}</td><td>${n.username}</td><td>${n.noHp}</td><td>Rp ${parseFloat(n.saldo).toLocaleString()}</td><td><span class="badge badge-success">${n.status}</span></td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('tableNasabah').innerHTML = html;
+      }
+    }
+
+    async function loadPetugas() {
+      const res = await fetchAPI('getPetugas');
+      if (res.data) {
+        let html = '<table><tr><th>ID</th><th>Nama</th><th>No HP</th><th>Lokasi</th><th>Username</th><th>Status</th></tr>';
+        res.data.forEach(p => {
+          html += `<tr><td>${p.id}</td><td>${p.nama}</td><td>${p.noHp}</td><td>${p.lokasi}</td><td>${p.username}</td><td><span class="badge badge-success">${p.status}</span></td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('tablePetugas').innerHTML = html;
+      }
+    }
+
+    async function loadTransaksi() {
+      const res = await fetchAPI('getTransaksi');
+      if (res.data) {
+        let html = '<table><tr><th>ID</th><th>Tanggal</th><th>Nasabah</th><th>Jenis</th><th>Berat</th><th>Total</th><th>Petugas</th></tr>';
+        res.data.forEach(t => {
+          html += `<tr><td>${t.idTransaksi}</td><td>${new Date(t.tanggal).toLocaleDateString()}</td><td>${t.namaNasabah}</td><td>${t.jenisSampah}</td><td>${t.berat} kg</td><td>Rp ${parseFloat(t.total).toLocaleString()}</td><td>${t.petugas}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('tableTransaksi').innerHTML = html;
+      }
+    }
+
+    async function loadPenukaran() {
+      const res = await fetchAPI('getPenukaran');
+      if (res.data) {
+        let html = '<table><tr><th>ID</th><th>Tanggal</th><th>Nasabah</th><th>Metode</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr>';
+        res.data.forEach(p => {
+          html += `<tr><td>${p.idTukar}</td><td>${new Date(p.tanggal).toLocaleDateString()}</td><td>${p.namaNasabah}</td><td>${p.metode}</td><td>Rp ${parseFloat(p.nominal).toLocaleString()}</td><td><span class="badge ${p.status === 'Diproses' ? 'badge-warning' : 'badge-success'}">${p.status}</span></td>`;
+          if (p.status === 'Diproses') {
+            html += `<td><button onclick="updatePenukaran('${p.idTukar}')">Selesaikan</button></td></tr>`;
+          } else {
+            html += `<td>-</td></tr>`;
+          }
+        });
+        html += '</table>';
+        document.getElementById('tablePenukaran').innerHTML = html;
+      }
+    }
+
+    async function loadHarga() {
+      const res = await fetchAPI('getHarga');
+      if (res.data) {
+        let html = '<table><tr><th>Jenis Sampah</th><th>Satuan</th><th>Harga Beli</th><th>Harga Jual</th><th>Aksi</th></tr>';
+        res.data.forEach(h => {
+          html += `<tr><td>${h.jenis}</td><td>${h.satuan}</td><td>Rp ${parseFloat(h.hargaBeli).toLocaleString()}</td><td>Rp ${parseFloat(h.hargaJual).toLocaleString()}</td><td><button onclick="editHarga('${h.id}',${h.hargaBeli},${h.hargaJual})">Edit</button></td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('tableHarga').innerHTML = html;
+      }
+    }
+
+    async function simpanNasabah() {
+      const data = {
+        username: document.getElementById('nUsername').value,
+        nama: document.getElementById('nNama').value,
+        noHp: document.getElementById('nNoHp').value,
+        email: document.getElementById('nEmail').value,
+        alamat: document.getElementById('nAlamat').value,
+        password: document.getElementById('nPassword').value
+      };
+      const res = await fetchAPI('tambahNasabah', data);
+      alert(res.message);
+      if (res.success) {
+        closeModal('nasabah');
+        loadNasabah();
+      }
+    }
+
+    async function simpanPetugas() {
+      const data = {
+        nama: document.getElementById('pNama').value,
+        noHp: document.getElementById('pNoHp').value,
+        lokasi: document.getElementById('pLokasi').value,
+        username: document.getElementById('pUsername').value,
+        password: document.getElementById('pPassword').value
+      };
+      const res = await fetchAPI('tambahPetugas', data);
+      alert(res.message);
+      if (res.success) {
+        closeModal('petugas');
+        loadPetugas();
+      }
+    }
+
+    async function updatePenukaran(id) {
+      const res = await fetchAPI('updatePenukaran', { idTukar: id, status: 'Selesai' });
+      alert(res.message);
+      if (res.success) loadPenukaran();
+    }
+
+    async function editHarga(id, beli, jual) {
+      const baruBeli = prompt('Harga Beli (Rp):', beli);
+      const baruJual = prompt('Harga Jual (Rp):', jual);
+      if (baruBeli && baruJual) {
+        const res = await fetchAPI('updateHarga', { id, hargaBeli: parseFloat(baruBeli), hargaJual: parseFloat(baruJual) });
+        alert(res.message);
+        if (res.success) loadHarga();
+      }
+    }
+
+    function openModal(type) { document.getElementById(`modal${type.charAt(0).toUpperCase() + type.slice(1)}`).style.display = 'flex'; }
+    function closeModal(type) { document.getElementById(`modal${type.charAt(0).toUpperCase() + type.slice(1)}`).style.display = 'none'; }
+
+    function logout() {
+      localStorage.removeItem('bankSampahSession');
+      window.location.href = 'login.html';
+    }
+
+    checkSession();
+  </script>
+</body>
+</html>
