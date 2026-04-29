@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Petugas - Bank Sampah</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+    .header {
+      background: #1565c0;
+      color: white;
+      padding: 15px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .btn-logout {
+      background: #c62828;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .nav {
+      background: white;
+      padding: 12px 25px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid #ddd;
+    }
+    .nav-btn {
+      background: #eee;
+      border: none;
+      padding: 8px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+    .nav-btn.active {
+      background: #1565c0;
+      color: white;
+    }
+    .container { padding: 25px; max-width: 1200px; margin: 0 auto; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: 600; font-size: 13px; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .btn-primary {
+      background: #1565c0;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .nasabah-info {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .struk {
+      background: #fff8e1;
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #f5f5f5; }
+    .hidden { display: none; }
+    .loading { text-align: center; padding: 40px; color: #999; }
+    @media (max-width: 768px) {
+      .container { padding: 15px; }
+      th, td { padding: 8px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>♻️ Bank Sampah - Petugas</h2>
+    <div><span id="petugasName">Loading...</span> <button class="btn-logout" onclick="logout()">Logout</button></div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" onclick="showSection('setor')">Input Setoran</button>
+    <button class="nav-btn" onclick="showSection('riwayat')">Riwayat Hari Ini</button>
+    <button class="nav-btn" onclick="showSection('nasabah')">Data Nasabah</button>
+  </div>
+
+  <div class="container">
+    <!-- Setor -->
+    <div id="section-setor">
+      <div class="card">
+        <h3>Cari Nasabah</h3>
+        <div class="form-group">
+          <input type="text" id="searchNasabah" placeholder="ID Nasabah atau Nama" style="width: 70%">
+          <button class="btn-primary" onclick="cariNasabah()">Cari</button>
+        </div>
+        <div id="nasabahDetail" class="hidden">
+          <div class="nasabah-info">
+            <h4 id="detailNama"></h4>
+            <p>ID: <span id="detailId"></span> | No HP: <span id="detailNoHp"></span></p>
+            <p>Alamat: <span id="detailAlamat"></span></p>
+            <p>Saldo: <strong id="detailSaldo"></strong></p>
+          </div>
+          <h3>Form Setoran</h3>
+          <div class="form-group"><label>Jenis Sampah</label><select id="jenisSampah" onchange="hitungTotal()"></select></div>
+          <div class="form-group"><label>Berat (Kg)</label><input type="number" id="berat" step="0.01" oninput="hitungTotal()"></div>
+          <div class="form-group"><label>Harga/Kg</label><input type="text" id="harga" readonly></div>
+          <div class="form-group"><label>Total</label><input type="text" id="total" readonly style="font-weight:bold;color:green;"></div>
+          <div class="form-group"><label>Lokasi</label><input type="text" id="lokasi" placeholder="Lokasi Bank Sampah"></div>
+          <button class="btn-primary" onclick="simpanSetoran()" id="btnSimpan">💾 Simpan Setoran</button>
+        </div>
+        <div id="setorSuccess" class="hidden">
+          <div class="struk" id="strukPreview"></div>
+          <button class="btn-primary" onclick="resetForm()">Input Setoran Baru</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Riwayat -->
+    <div id="section-riwayat" class="hidden">
+      <div class="card">
+        <h3>Riwayat Transaksi Hari Ini</h3>
+        <div id="riwayatTransaksi">Loading...</div>
+      </div>
+    </div>
+
+    <!-- Nasabah -->
+    <div id="section-nasabah" class="hidden">
+      <div class="card">
+        <h3>Data Nasabah</h3>
+        <div class="form-group"><input type="text" id="searchNasabahAll" placeholder="Cari nasabah..." onkeyup="filterNasabah()"></div>
+        <div id="tableNasabah">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxBigs_t1qhRIzx7P1blyDyy8MpP3GiJGpPgzsdZGiTdWh3diAYeVtYpACT6lUwRBrK/exec';
+    let currentUser = null;
+    let selectedNasabah = null;
+    let hargaList = [];
+    let allNasabah = [];
+
+    async function checkSession() {
+      const session = localStorage.getItem('bankSampahSession');
+      if (!session) { window.location.href = 'login.html'; return; }
+      currentUser = JSON.parse(session);
+      if (currentUser.role !== 'petugas' && currentUser.role !== 'admin') {
+        window.location.href = `${currentUser.role}.html`;
+        return;
+      }
+      document.getElementById('petugasName').innerText = currentUser.nama;
+      await loadHarga();
+      await loadRiwayat();
+      await loadAllNasabah();
+    }
+
+    async function fetchAPI(action, data = {}) {
+      const response = await fetch(WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ action, ...data, session: JSON.stringify(currentUser) })
+      });
+      return await response.json();
+    }
+
+    function showSection(section) {
+      document.getElementById('section-setor').classList.add('hidden');
+      document.getElementById('section-riwayat').classList.add('hidden');
+      document.getElementById('section-nasabah').classList.add('hidden');
+      document.getElementById(`section-${section}`).classList.remove('hidden');
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      if (section === 'riwayat') loadRiwayat();
+      if (section === 'nasabah') loadAllNasabah();
+    }
+
+    async function loadHarga() {
+      const res = await fetchAPI('getHarga');
+      hargaList = res.data || [];
+      const select = document.getElementById('jenisSampah');
+      select.innerHTML = '<option value="">-- Pilih Jenis --</option>';
+      hargaList.forEach(h => {
+        select.innerHTML += `<option value="${h.id}" data-harga="${h.hargaBeli}" data-nama="${h.jenis}">${h.jenis} - Rp ${parseFloat(h.hargaBeli).toLocaleString()}/kg</option>`;
+      });
+    }
+
+    async function cariNasabah() {
+      const keyword = document.getElementById('searchNasabah').value.trim();
+      if (!keyword) { alert('Masukkan ID atau nama nasabah'); return; }
+      const res = await fetchAPI('getNasabah');
+      const found = res.data.find(n => n.id === keyword || n.nama.toLowerCase().includes(keyword.toLowerCase()));
+      if (!found) { alert('Nasabah tidak ditemukan'); return; }
+      selectedNasabah = found;
+      document.getElementById('detailNama').innerHTML = '👤 ' + found.nama;
+      document.getElementById('detailId').innerText = found.id;
+      document.getElementById('detailNoHp').innerText = found.noHp;
+      document.getElementById('detailAlamat').innerText = found.alamat;
+      document.getElementById('detailSaldo').innerHTML = 'Rp ' + parseFloat(found.saldo).toLocaleString();
+      document.getElementById('nasabahDetail').classList.remove('hidden');
+      document.getElementById('setorSuccess').classList.add('hidden');
+    }
+
+    function hitungTotal() {
+      const select = document.getElementById('jenisSampah');
+      const berat = parseFloat(document.getElementById('berat').value) || 0;
+      const harga = parseFloat(select.options[select.selectedIndex]?.dataset.harga) || 0;
+      document.getElementById('harga').value = 'Rp ' + harga.toLocaleString();
+      document.getElementById('total').value = 'Rp ' + (berat * harga).toLocaleString();
+    }
+
+    async function simpanSetoran() {
+      if (!selectedNasabah) { alert('Cari nasabah dulu'); return; }
+      const select = document.getElementById('jenisSampah');
+      const jenisText = select.options[select.selectedIndex]?.dataset.nama || '';
+      const berat = parseFloat(document.getElementById('berat').value);
+      const harga = parseFloat(select.options[select.selectedIndex]?.dataset.harga);
+      const lokasi = document.getElementById('lokasi').value || 'Lokasi Utama';
+      if (!select.value) { alert('Pilih jenis sampah'); return; }
+      if (!berat || berat <= 0) { alert('Masukkan berat'); return; }
+      
+      const btn = document.getElementById('btnSimpan');
+      btn.disabled = true;
+      btn.innerText = 'Menyimpan...';
+      
+      const res = await fetchAPI('tambahTransaksi', {
+        idNasabah: selectedNasabah.id,
+        namaNasabah: selectedNasabah.nama,
+        jenisSampah: jenisText,
+        berat: berat,
+        hargaSatuan: harga,
+        lokasi: lokasi
+      });
+      
+      btn.disabled = false;
+      btn.innerText = '💾 Simpan Setoran';
+      
+      if (res.success) {
+        document.getElementById('nasabahDetail').classList.add('hidden');
+        document.getElementById('setorSuccess').classList.remove('hidden');
+        document.getElementById('strukPreview').innerHTML = `
+          <h4>🧾 STRUK SETORAN</h4>
+          <p><strong>ID:</strong> ${res.idTransaksi}</p>
+          <p><strong>Nasabah:</strong> ${selectedNasabah.nama}</p>
+          <p><strong>Jenis:</strong> ${jenisText}</p>
+          <p><strong>Berat:</strong> ${berat} kg</p>
+          <p><strong>Total:</strong> <strong style="color:green">Rp ${res.total.toLocaleString()}</strong></p>
+        `;
+        await loadRiwayat();
+      } else {
+        alert('Gagal: ' + res.message);
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('searchNasabah').value = '';
+      document.getElementById('jenisSampah').value = '';
+      document.getElementById('berat').value = '';
+      document.getElementById('harga').value = '';
+      document.getElementById('total').value = '';
+      document.getElementById('lokasi').value = '';
+      document.getElementById('setorSuccess').classList.add('hidden');
+      document.getElementById('nasabahDetail').classList.add('hidden');
+      selectedNasabah = null;
+    }
+
+    async function loadRiwayat() {
+      const res = await fetchAPI('getTransaksi');
+      if (res.data) {
+        const today = new Date(); today.setHours(0,0,0,0);
+        const todayTrans = res.data.filter(t => {
+          const d = new Date(t.tanggal); d.setHours(0,0,0,0);
+          return d.getTime() === today.getTime();
+        });
+        if (todayTrans.length === 0) {
+          document.getElementById('riwayatTransaksi').innerHTML = '<p>Belum ada transaksi hari ini</p>';
+          return;
+        }
+        let html = '能看到<th>ID</th><th>Waktu</th><th>Nasabah</th><th>Jenis</th><th>Berat</th><th>Total</th></tr>';
+        todayTrans.forEach(t => {
+          html += `<tr><td>${t.idTransaksi}</td><td>${new Date(t.tanggal).toLocaleTimeString()}</td><td>${t.namaNasabah}</td><td>${t.jenisSampah}</td><td>${t.berat} kg</td><td>Rp ${parseFloat(t.total).toLocaleString()}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('riwayatTransaksi').innerHTML = html;
+      }
+    }
+
+    async function loadAllNasabah() {
+      const res = await fetchAPI('getNasabah');
+      allNasabah = res.data || [];
+      renderNasabahTable(allNasabah);
+    }
+
+    function renderNasabahTable(data) {
+      if (!data.length) {
+        document.getElementById('tableNasabah').innerHTML = '<p>Belum ada data</p>';
+        return;
+      }
+      let html = '<table><th>ID</th><th>Nama</th><th>No HP</th><th>Alamat</th><th>Saldo</th><th>Status</th></tr>';
+      data.forEach(n => {
+        html += `<tr><td>${n.id}</td><td>${n.nama}</td><td>${n.noHp}</td><td>${n.alamat}</td><td>Rp ${parseFloat(n.saldo).toLocaleString()}</td><td>${n.status}</td></tr>`;
+      });
+      html += '</table>';
+      document.getElementById('tableNasabah').innerHTML = html;
+    }
+
+    function filterNasabah() {
+      const keyword = document.getElementById('searchNasabahAll').value.toLowerCase();
+      const filtered = allNasabah.filter(n => n.nama.toLowerCase().includes(keyword) || n.id.toLowerCase().includes(keyword));
+      renderNasabahTable(filtered);
+    }
+
+    function logout() {
+      localStorage.removeItem('bankSampahSession');
+      window.location.href = 'login.html';
+    }
+
+    checkSession();
+  </script>
+</body>
+</html>
